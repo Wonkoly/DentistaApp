@@ -1,6 +1,7 @@
 import flet as ft
 
-def calendar_view(page: ft.Page):
+def CalandarView(page: ft.Page):
+    
     def siguiente(e):
         page.go("/form")
 

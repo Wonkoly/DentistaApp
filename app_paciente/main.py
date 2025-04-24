@@ -1,21 +1,21 @@
 import flet as ft
-from views.home import home_view
-from views.calendar import calendar_view
-from views.form import form_view
-from views.confirm import confirm_view
+from views.home import HomeView 
 
 def main(page: ft.Page):
-    page.title = "Reserva de Citas - Clínica Dental"
-    page.theme_mode = ft.ThemeMode.LIGHT
 
-    page.routes = {
-        "/": home_view,
-        "/calendar": calendar_view,
-        "/form": form_view,
-        "/confirm": confirm_view,
-    }
+    def route_change(e):
+        page.views.clear()
+        if page.route == "/":
+            page.views.append(HomeView(page))
+        elif page.route == "/calendar":
+            pass
+        elif page.route == "/form":
+            pass
+        elif page.route == "/comfirm":
+            pass
+        page.update()
 
-    page.go("/")
+    page.on_route_change = route_change
+    page.go(page.route)
 
-if __name__ == "__main__":
-    ft.app(target=main)
+ft.app(target=main, view=ft.WEB_BROWSER, port=8080, assets_dir="assets")
