@@ -1,17 +1,15 @@
 import flet as ft
-from views.home import HomeView 
+from views.login_dentista import LoginDentistaView
 
 def main(page: ft.Page):
+    page.title = "Clínica Choyo - Dentista"
 
-    def route_change(e):
+    def route_change(route):
         page.views.clear()
-        if page.route == "/":
-            page.views.append(HomeView(page))
-        elif page.route == "":
-            pass
+        page.views.append(LoginDentistaView(page))
         page.update()
 
     page.on_route_change = route_change
     page.go(page.route)
 
-ft.app(target=main)
+ft.app(target=main, view=ft.WEB_BROWSER, port=8081, assets_dir="assets")

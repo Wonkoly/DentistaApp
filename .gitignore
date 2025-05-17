@@ -1,0 +1,22 @@
+# Archivos Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de entorno
+.env
+
+# Archivos binarios y personales
+*.pdf
+*.png
+
+# Archivos temporales
+*.log
+*.sqlite3
+*.db
+
+# VS Code y entornos locales
+.vscode/
+.idea/
+

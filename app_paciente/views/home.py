@@ -1,79 +1,111 @@
+
 import flet as ft
-from theme.components import AppButton, AppDropdown, AppLabel
-from theme.colors import APP_BG_COLOR, CARD_BG_COLOR
+import datetime
+import asyncio
 
 def HomeView(page: ft.Page):
-    page.title = "Clínica Choyo - Puerto Vallarta"
-    page.scroll = "auto"
-    page.bgcolor = APP_BG_COLOR
+    page.title = "Clínica Dental Choyo"
+
+    hora_actual = ft.Text(size=16, color="white")
+
+    async def reloj_loop():
+        while True:
+            hora_actual.value = datetime.datetime.now().strftime("🕒 %I:%M %p")
+            page.update()
+            await asyncio.sleep(1)
+
+    page.run_task(reloj_loop)
+
+    def on_seccion_change(e):
+        if e.control.value == "Opiniones":
+            page.go("/opiniones")
+        elif e.control.value == "Tratamientos":
+            page.go("/tratamientos")
+        elif e.control.value == "Clínica":
+            page.go("/clinica")
+
+    seccion_combo = ft.Dropdown(
+        label="Explora",
+        options=[
+            ft.dropdown.Option("Tratamientos"),
+            ft.dropdown.Option("Clínica"),
+            ft.dropdown.Option("Opiniones")
+        ],
+        width=200,
+        on_change=on_seccion_change
+    )
+
+    bienvenido = ft.Text("CLÍNICA DENTAL EN PUERTO VALLARTA", size=26, weight=ft.FontWeight.BOLD, color="white")
+
+    descripcion = ft.Text(
+        "Esta clínica dental está dispuesta a dar su mejor servicio para sus clientes, "
+        "donde se sientan cómodos y tengan una mejor experiencia. Tu salud es primero, "
+        "¡y nosotros nos encargaremos de que tengas una mejor sonrisa al mundo!!",
+        size=18,
+        text_align=ft.TextAlign.CENTER,
+        color="white"
+    )
+
+    contacto = ft.Column([
+        ft.Text("📍 Dirección: Calle Guatemala #125, El Pitillal, Puerto Vallarta, JAL", size=14, color="white"),
+        ft.Text("📞 Teléfono: 322-349-61-55", size=14, color="white"),
+        ft.Text("📧 Email: dentista.choyo@gmail.com", size=14, color="white"),
+        ft.Text("🕒 Horarios: Lunes a Sábado, 9:00 am - 6:00 pm", size=14, color="white"),
+    ], spacing=5)
+
+    pedir_cita_btn = ft.ElevatedButton(
+        text="Pedir cita",
+        on_click=lambda e: page.go("/calendar"),
+        bgcolor=ft.Colors.BLUE_500,
+        color=ft.Colors.WHITE,
+        scale=ft.Scale(1),
+        animate_scale=ft.Animation(300, "easeOut")
+    )
+
+    def on_hover(e):
+        if e.data == "true":
+            pedir_cita_btn.scale.value = 1.08
+            pedir_cita_btn.bgcolor = ft.Colors.BLUE_700
+        else:
+            pedir_cita_btn.scale.value = 1
+            pedir_cita_btn.bgcolor = ft.Colors.BLUE_500
+        page.update()
+
+    pedir_cita_btn.on_hover = on_hover
+
+    barra_superior = ft.Row([
+        ft.Text("CLÍNICA CHOYO", size=20, weight=ft.FontWeight.BOLD, color="white"),
+        seccion_combo,
+        ft.Container(expand=True),
+        hora_actual
+    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+    contenido = ft.Column([
+        barra_superior,
+        ft.VerticalDivider(opacity=0),
+        ft.Container(
+            content=ft.Column([
+                bienvenido,
+                descripcion,
+                contacto,
+                pedir_cita_btn
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20),
+            alignment=ft.alignment.center,
+            padding=40
+        )
+    ], spacing=25, scroll=ft.ScrollMode.AUTO)
 
     return ft.View(
         route="/",
-        vertical_alignment=ft.MainAxisAlignment.START,
         controls=[
-            ft.Container(
-                expand=True,
-                padding=20,
-                bgcolor=CARD_BG_COLOR,
-                border_radius=10,
-                content=ft.Column(
+            ft.Stack([
+                ft.Image(src="assets/6c3e62c8.png", fit=ft.ImageFit.COVER, expand=True),
+                ft.Container(
+                    content=contenido,
                     expand=True,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    alignment=ft.MainAxisAlignment.START,
-                    controls=[
-                        # Header responsivo
-                        ft.ResponsiveRow(
-                            controls=[
-                                ft.Row([
-                                    ft.Image(
-                                        src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png",
-                                        width=20,
-                                        height=20
-                                    ),
-                                    AppLabel("ABIERTO DE 9 AM - 8 PM", size=12)
-                                ]),
-                                AppLabel("CLÍNICA CHOYO", size=22, bold=True),
-                                ft.Row([
-                                    AppDropdown("Tratamientos", ["Limpieza", "Ortodoncia", "Blanqueamiento"]),
-                                    AppDropdown("Clínica", ["Instalaciones", "Equipo"]),
-                                    AppDropdown("Opiniones", ["Ver testimonios"]),
-                                    AppButton("PEDIR CITA", on_click=lambda _: page.go("/calendar"))
-                                ], wrap=True, spacing=10)
-                            ],
-                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            run_spacing=10
-                        ),
-
-                        ft.Container(height=50),
-
-                        # Cuerpo central
-                        AppLabel("CLÍNICA DENTAL EN PUERTO VALLARTA", size=24, bold=True),
-                        ft.Container(height=20),
-                        AppLabel(
-                            "ESTA CLÍNICA DENTAL ESTÁ DISPUESTA A DAR SU MEJOR SERVICIO PARA SUS CLIENTES, "
-                            "DONDE SE SIENTAN CÓMODOS Y TENGAN UNA MEJOR EXPERIENCIA, TU SALUD ES PRIMERO, "
-                            "Y NOSOTROS NOS ENCARGAREMOS DE QUE TENGAS UNA MEJOR SONRISA AL MUNDO!!",
-                            size=16,
-                            italic=True
-                        ),
-                        ft.Container(height=10),
-                        AppLabel("REALIZAMOS EVALUACIÓN DENTAL GRATUITA", size=14, italic=True, bold=True),
-                        ft.Container(height=40),
-
-                        # Pie de página
-                        ft.ResponsiveRow(
-                            controls=[
-                                AppLabel("CALLE GUATEMALA #125 COL. DEL TORO, EL PITILLAL, PUERTO VALLARTA. JAL", size=12),
-                                ft.Column([
-                                    AppLabel("DENTISTA: RODOLFO CASTELLÓN", size=12),
-                                    AppLabel("322-349-61-55\n322-22-44-847", size=12)
-                                ], alignment=ft.MainAxisAlignment.END)
-                            ],
-                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            run_spacing=10
-                        )
-                    ]
+                    padding=40,
+                    bgcolor=ft.Colors.with_opacity(0.4, ft.Colors.BLACK)
                 )
-            )
+            ], expand=True)
         ]
     )

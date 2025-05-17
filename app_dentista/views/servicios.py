@@ -1,17 +1,16 @@
-# views/pacientes.py
 import flet as ft
 from components.navbar import navbar
 
-def PacientesView(page: ft.Page):
+def ServiciosView(page: ft.Page):
     return ft.View(
-        route="/pacientes",
+        route="/servicios",
         appbar=navbar(page),
         controls=[
             ft.Container(
                 content=ft.Column(
                     controls=[
-                        ft.Text("Gestión de Pacientes", size=24),
-                        ft.Text("Aquí podrás ver y administrar los pacientes registrados.")
+                        ft.Text("Servicios del consultorio", size=24),
+                        ft.Text("Aquí irán los servicios disponibles para agendar.")
                     ]
                 )
             )
