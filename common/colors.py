@@ -1,11 +1,21 @@
 # common/colors.py
-
-# Colores principales de la paleta LUNA
-PRIMARY_LIGHT = "#A7EBF2"
 PRIMARY = "#54ACBF"
+PRIMARY_LIGHT = "#A7EBF2"
 PRIMARY_DARK = "#26658C"
 SECONDARY = "#023859"
-BACKGROUND_DARK = "#011C40"
+SECONDARY_DARK = "#011C40"
+
+BACKGROUND = "F6F6F6"
+TEXT = "#000000"
+
+TEXT_PRIMARY = "white"
+TEXT_DARK = "black"
+TEXT_LIGHT = "#CCCCCC"
+
+ERROR = "#D9534F"
+SUCCESS = "#5cb85c"
+
+
 
 # Alternativas semánticas (más legibles)
 ACCENT = PRIMARY

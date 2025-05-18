@@ -1,0 +1,6 @@
+README.md
+setup.py
+dentista_app.egg-info/PKG-INFO
+dentista_app.egg-info/SOURCES.txt
+dentista_app.egg-info/dependency_links.txt
+dentista_app.egg-info/top_level.txt

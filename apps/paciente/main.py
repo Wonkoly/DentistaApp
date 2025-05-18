@@ -1,15 +1,26 @@
 import flet as ft
-import os
-import sys
+import sys, os
+import re
+from datetime import datetime
 
+# 🔧 Agrega dinámicamente el path raíz del proyecto (DentistaApp)
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
 
-# Añadir el path absoluto de la carpeta actual
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+# 🔎 Debug visual
+print("🧭 Ruta base añadida:", ROOT_DIR)
+print("🗂 sys.path:", sys.path)
+print("📁 Contenido del ROOT_DIR:", os.listdir(ROOT_DIR))
 
-from dotenv import load_dotenv
-load_dotenv()
+# ✅ Verificación de existencia
+assert os.path.exists(os.path.join(ROOT_DIR, "common")), "❌ common folder no existe en ROOT_DIR"
+assert os.path.exists(os.path.join(ROOT_DIR, "common/colors.py")), "❌ colors.py no encontrado"
 
+# 📦 Importaciones del proyecto
+from common import colors
+from utils.email import enviar_factura
 from views.home import HomeView
 from views.calendar_view import CalendarView
 from views.form import FormView
@@ -17,30 +28,18 @@ from views.confirm import ConfirmView
 from views.opiniones import OpinionesView
 from views.tratamientos import TratamientosView
 from views.clinica import ClinicaView
-from views.pago import PagoView
-
-# Agrega el path raíz para importar desde common/
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-
-from common import colors  # ✅ ahora puedes usar tus colores
+from views.pago import PagoView, PagoExitosoView
 
 def main(page: ft.Page):
-    page.title = "App Dentista - Paciente"
+    page.title = "Clínica Choyo - Dentista"
+    page.window_width = 420
+    page.window_height = 850
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.theme = ft.Theme(
-        color_scheme=ft.ColorScheme(
-            primary=colors.PRIMARY,
-            background=colors.PRIMARY_LIGHT,
-            surface=colors.SURFACE,
-            on_primary=colors.TEXT_PRIMARY,
-            on_surface=colors.TEXT_DARK
-        )
-    )
-    # ...
-
+    page.theme = ft.Theme(color_scheme_seed=colors.PRIMARY)
+    page.scroll = ft.ScrollMode.HIDDEN
+    page.update()
 
     def route_change(e):
-        print(f"🔀 Ruta actual: {page.route}")
         page.views.clear()
         match page.route:
             case "/":
@@ -59,6 +58,8 @@ def main(page: ft.Page):
                 page.views.append(ClinicaView(page))
             case "/pago":
                 page.views.append(PagoView(page))
+            case "/pago_exitoso":
+                page.views.append(PagoExitosoView(page))
 
         page.update()
 
@@ -66,4 +67,3 @@ def main(page: ft.Page):
     page.go(page.route)
 
 ft.app(target=main, view=ft.WEB_BROWSER, port=8080, assets_dir="assets")
-
