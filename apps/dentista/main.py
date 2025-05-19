@@ -52,8 +52,9 @@ def main(page: ft.Page):
                 page.views.append(HomeDentistaView(page))
             case "/servicios_dentista":
                 page.views.append(ServiciosDentistaView(page))
-            case "/pacientes_dentista":
+            case "/configuracion_dentista":
                 page.views.append(ConfiguracionDentistaView(page))
+
         page.update()
 
     page.on_route_change = route_change
