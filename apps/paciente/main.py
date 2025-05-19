@@ -10,9 +10,9 @@ if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 
 # 🔎 Debug visual
-print("🧭 Ruta base añadida:", ROOT_DIR)
-print("🗂 sys.path:", sys.path)
-print("📁 Contenido del ROOT_DIR:", os.listdir(ROOT_DIR))
+print("\U0001F9ED Ruta base añadida:", ROOT_DIR)
+print("\U0001F5C2 sys.path:", sys.path)
+print("\U0001F4C1 Contenido del ROOT_DIR:", os.listdir(ROOT_DIR))
 
 # ✅ Verificación de existencia
 assert os.path.exists(os.path.join(ROOT_DIR, "common")), "❌ common folder no existe en ROOT_DIR"

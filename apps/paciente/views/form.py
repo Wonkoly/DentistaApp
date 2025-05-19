@@ -114,4 +114,3 @@ def FormView(page: ft.Page) -> ft.View:
         vertical_alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
-
