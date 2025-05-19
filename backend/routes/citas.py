@@ -57,3 +57,22 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
     db.commit()
 
     return {"mensaje": "Cita registrada correctamente", "id": cita.id}
+@router.get("/api/pacientes")
+def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
+    pacientes_db = db.query(Paciente).all()
+    resultado = []
+
+    for paciente in pacientes_db:
+        citas = db.query(Cita).filter(Cita.paciente_id == paciente.id).all()
+        citas_formateadas = [
+            f"{cita.fecha_hora.strftime('%Y-%m-%d %H:%M')} - Servicio ID: {cita.servicio_id}" 
+            for cita in citas
+        ]
+        resultado.append({
+            "nombre": paciente.nombre,
+            "correo": paciente.email,
+            "telefono": paciente.telefono,
+            "citas": citas_formateadas
+        })
+
+    return resultado

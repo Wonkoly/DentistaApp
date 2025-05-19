@@ -6,13 +6,11 @@ sys.path.insert(0, ROOT_DIR)
 print("🧭 Ruta base añadida:", ROOT_DIR)
 
 from fastapi import FastAPI
-from backend.routes import auth, citas  # si tienes más routers
+from backend.routes import auth, citas
 
 app = FastAPI()
-
-# Incluir rutas
 app.include_router(auth.router, prefix="/api")
-app.include_router(citas.router, prefix="/api")  # si lo tienes
+app.include_router(citas.router, prefix="/api")
 
 import flet as ft
 
@@ -23,9 +21,7 @@ from apps.dentista.views.home_dentista import HomeDentistaView
 from apps.dentista.views.servicios_dentista import ServiciosDentistaView
 from apps.dentista.views.configuracion_dentista import ConfiguracionDentistaView
 from apps.dentista.views.confirmar_codigo import ConfirmarCodigoView
-from backend.routes import auth
-app.include_router(auth.router, prefix="/api")
-
+from apps.dentista.views.paciente_dentista import PacienteDentistaView  # 👈 NUEVO IMPORT
 
 def main(page: ft.Page):
     page.title = "Clinica Choyo - Dentista"
@@ -35,7 +31,7 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.HIDDEN
     page.update()
 
-    def route_change(e):
+    async def route_change(e):  # 👈 AHORA ASYNC
         page.views.clear()
         match page.route:
             case "/":
@@ -54,6 +50,8 @@ def main(page: ft.Page):
                 page.views.append(ServiciosDentistaView(page))
             case "/configuracion_dentista":
                 page.views.append(ConfiguracionDentistaView(page))
+            case "/pacientes_dentista":  # 👈 NUEVA RUTA
+                await PacienteDentistaView(page)  # 👈 AWAIT
 
         page.update()
 
@@ -61,5 +59,4 @@ def main(page: ft.Page):
     page.go(page.route)
 
 if __name__ == "__main__":
-
     ft.app(target=main, view=ft.WEB_BROWSER, port=8081, assets_dir="assets")
