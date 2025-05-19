@@ -34,6 +34,9 @@ def RecuperarDentistaView(page: ft.Page):
             page.go("/confirmar_codigo")
         page.update()
 
+    def volver_login(e):
+        page.go("/login_dentista")
+
     return ft.View(
         "/recuperar_dentista",
         controls=[
@@ -46,12 +49,14 @@ def RecuperarDentistaView(page: ft.Page):
                         "Enviar código",
                         on_click=enviar_codigo,
                         bgcolor=colors.PRIMARY,
-                        color=colors.TEXT_PRIMARY
+                        color=colors.TEXT_PRIMARY,
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                        width=300
                     ),
                     mensaje,
                     ft.TextButton(
                         "Volver al login",
-                        url="/login_dentista",
+                        on_click=volver_login,
                         style=ft.ButtonStyle(color=colors.SECONDARY_DARK)
                     )
                 ],

@@ -1,16 +1,34 @@
 import flet as ft
-from common.email import enviar_correo_confirmacion
-from common import colors
 import sys, os
+import httpx
+import asyncio
 from common import colors
-from utils.email import enviar_factura
+from common.email import enviar_correo_confirmacion
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
-import flet as ft
-import re
-from datetime import datetime
-from common import colors
-from utils.email import enviar_factura
+
+async def registrar_en_base(cita, paciente):
+    try:
+        async with httpx.AsyncClient() as client:
+         response = await client.post("http://localhost:8000/api/citas/", json={
+        "nombre": paciente["nombre"],
+        "apellido": paciente["apellido"],
+        "correo": paciente["correo"],
+        "telefono": paciente["telefono"],
+        "notas": paciente.get("notas", ""),
+        "servicio": int(cita["servicio_id"]),  # 👈 CORREGIDO
+        "fecha": cita["fecha"],
+        "hora": cita["hora"],
+        "sucursal": cita["sucursal"]
+    })
+
+
+        if response.status_code == 200:
+                print("[✅] Cita registrada correctamente en la base de datos.")
+        else:
+                print(f"[❌] Error al registrar cita. Código: {response.status_code}")
+    except Exception as e:
+        print(f"[❌] Error de conexión al registrar cita: {e}")
 
 
 def ConfirmView(page: ft.Page):
@@ -25,27 +43,27 @@ def ConfirmView(page: ft.Page):
         )
         page.snack_bar.open = True
         page.update()
+        asyncio.run(registrar_en_base(cita, paciente))
+ 
 
-    reenviar_correo(None)  # Envío automático al entrar
+    # Envío automático al entrar
+    reenviar_correo(None)
 
     pasos = ft.Row(
-    alignment=ft.MainAxisAlignment.CENTER,
-    spacing=10,
-    controls=[
-        # Paso 1: completado
-        ft.Icon(name="check_circle", color=colors.SUCCESS, size=24),
-        # Paso 2: activo
-        ft.Icon(name="check_circle", color=colors.SUCCESS, size=24),
-        # Paso 3: pendiente
-        ft.Icon(name="radio_button_unchecked", color="#CCCCCC", size=24),
-    ]
-)
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=10,
+        controls=[
+            ft.Icon(name="check_circle", color=colors.SUCCESS, size=24),
+            ft.Icon(name="check_circle", color=colors.SUCCESS, size=24),
+            ft.Icon(name="radio_button_unchecked", color="#CCCCCC", size=24),
+        ]
+    )
 
     resumen = ft.Container(
         content=ft.Column([
             ft.Text("🗓 Detalles de la Cita", size=18, weight="bold", color=colors.PRIMARY_DARK),
             ft.Text("Información del paciente:", size=14, weight="bold", color=colors.TEXT_DARK),
-            ft.Text(f"👤 {paciente.get('nombre', '')}", size=12),
+            ft.Text(f"👤 {paciente.get('nombre', '')} {paciente.get('apellido', '')}", size=12),
             ft.Text(f"📧 {paciente.get('correo', '')}", size=12),
             ft.Text(f"📱 {paciente.get('telefono', '')}", size=12),
 
@@ -59,21 +77,6 @@ def ConfirmView(page: ft.Page):
             ft.Text(f"📝 Motivo: {paciente.get('notas', '') or 'No especificado'}", size=12),
 
             ft.Divider(),
-
-            ft.Row([
-                ft.Text("Subtotal:", size=12),
-                ft.Text("$500 MXN", weight="bold", size=12)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-
-            ft.Row([
-                ft.Text("Costo por servicio:", size=12),
-                ft.Text("$500.00", size=12)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-
-            ft.Row([
-                ft.Text("Comisión:", size=12),
-                ft.Text("$12.00", size=12)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
 
             ft.Row([
                 ft.Text("Total:", size=14, weight="bold"),
@@ -97,16 +100,15 @@ def ConfirmView(page: ft.Page):
         ft.TextButton("← Regresar", on_click=lambda _: page.go("/form")),
         ft.OutlinedButton("🔁 Reenviar", on_click=reenviar_correo),
         ft.ElevatedButton(
-    text="💳 Pagar ahora",
-    on_click=lambda _: page.go("/pago"),
-    bgcolor=colors.SUCCESS,
-    style=ft.ButtonStyle(
-        color="white",
-        text_style=ft.TextStyle(weight="bold", size=14),
-        padding=ft.Padding(12, 10, 12, 10)
-    )
-)
-
+            text="💳 Pagar ahora",
+            on_click=lambda _: page.go("/pago"),
+            bgcolor=colors.SUCCESS,
+            style=ft.ButtonStyle(
+                color="white",
+                text_style=ft.TextStyle(weight="bold", size=14),
+                padding=ft.Padding(12, 10, 12, 10)
+            )
+        )
     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
     return ft.View(

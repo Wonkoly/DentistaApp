@@ -9,10 +9,10 @@ source .venv/bin/activate.fish
 echo "🚀 Iniciando API FastAPI..."
 uvicorn backend.main:app --reload &
 
-echo "🦷 Iniciando app Dentista en Flet..."
-python apps/dentista/main.py &
+#echo "🦷 Iniciando app Dentista en Flet..."
+#python apps/dentista/main.py &
 
-echo "🦷 Iniciando app Dentista en Flet..."
-python apps/paciente/main.py
+#echo "🦷 Iniciando app Dentista en Flet..."
+#python apps/paciente/main.py
 
 

@@ -20,7 +20,6 @@ assert os.path.exists(os.path.join(ROOT_DIR, "common/colors.py")), "❌ colors.p
 
 # 📦 Importaciones del proyecto
 from common import colors
-from utils.email import enviar_factura
 from views.home import HomeView
 from views.calendar_view import CalendarView
 from views.form import FormView

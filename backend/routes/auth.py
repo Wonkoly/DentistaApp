@@ -49,4 +49,3 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
         "email": usuario.email,
         "rol": usuario.rol
     }
-

@@ -2,7 +2,6 @@ import flet as ft
 import datetime
 import sys, os
 
-# Importar colores LUNA
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from common import colors
 
@@ -50,11 +49,11 @@ def CalendarView(page: ft.Page):
         width=250,
         label="Seleccione un servicio",
         options=[
-            ft.dropdown.Option("Limpieza dental - $350 MXN"),
-            ft.dropdown.Option("Extracción dental - $700 MXN"),
-            ft.dropdown.Option("Ortodoncia - $1500 MXN"),
-            ft.dropdown.Option("Blanqueamiento - 350 MXN"),
-            ft.dropdown.Option("Carillas dentales 1200 MXN")
+            ft.dropdown.Option(text="Limpieza dental - $350 MXN", key=1),
+            ft.dropdown.Option(text="Extracción dental - $700 MXN", key=2),
+            ft.dropdown.Option(text="Ortodoncia - $1500 MXN", key=3),
+            ft.dropdown.Option(text="Blanqueamiento - $350 MXN", key=4),
+            ft.dropdown.Option(text="Carillas dentales - $1200 MXN", key=5)
         ]
     )
 
@@ -78,10 +77,13 @@ def CalendarView(page: ft.Page):
 
         page.client_storage.set("cita", {
             "servicio": service_dropdown.value,
+            "servicio_id": next((opt.key for opt in service_dropdown.options if opt.text == service_dropdown.value), None),
             "sucursal": location_dropdown.value,
             "hora": time_dropdown.value,
             "fecha": date_display.value
         })
+
+
         page.go("/form")
 
     nav_buttons = ft.Row([
@@ -125,9 +127,9 @@ def CalendarView(page: ft.Page):
         error_text,
         nav_buttons
     ],
-    spacing=30,
-    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-    scroll=ft.ScrollMode.AUTO
+        spacing=30,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        scroll=ft.ScrollMode.AUTO
     )
 
     return ft.View(

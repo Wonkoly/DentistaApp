@@ -1,52 +1,66 @@
-# utils/auth.py
-import re
-import hashlib
-import json
-from pathlib import Path
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
-USERS_FILE = Path(__file__).resolve().parent.parent / "database" / "dummy_users.json"
+from backend.database import SessionLocal
+from backend.models.usuario import Usuario
+from backend.utils.security import hash_password, verificar_password
 
+router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
 
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+# -------------------------------
+# 🚀 Dependencia de la base de datos
+# -------------------------------
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
+# -------------------------------
+# 📩 Modelo para recuperación de contraseña
+# -------------------------------
+class RecuperarContrasenaRequest(BaseModel):
+    email: str
+    codigo: str
+    nueva_contrasena: str
 
-def validar_email(email: str) -> bool:
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email) is not None
+# -------------------------------
+# 🔑 Endpoint: Recuperar contraseña
+# -------------------------------
+@router.post("/recuperar")
+def recuperar_contrasena(data: RecuperarContrasenaRequest, db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter_by(email=data.email).first()
 
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-def cargar_usuarios():
-    if USERS_FILE.exists():
-        with open(USERS_FILE, "r") as f:
-            return json.load(f)
-    return []
+    if data.codigo != "123456":  # Aquí debes implementar validación real de código
+        raise HTTPException(status_code=400, detail="Código incorrecto")
 
+    usuario.password = hash_password(data.nueva_contrasena)
+    db.commit()
 
-def guardar_usuarios(lista):
-    with open(USERS_FILE, "w") as f:
-        json.dump(lista, f, indent=4)
+    return {"mensaje": "Contraseña actualizada correctamente"}
 
+# -------------------------------
+# 📝 Endpoint: Registrar nuevo usuario
+# -------------------------------
+@router.post("/registrar")
+def registrar_usuario(nombre: str, apellido: str, email: str, password: str, db: Session = Depends(get_db)):
+    usuario_existente = db.query(Usuario).filter(Usuario.email == email).first()
 
-def usuario_existe(email: str) -> bool:
-    usuarios = cargar_usuarios()
-    return any(u["email"] == email for u in usuarios)
+    if usuario_existente:
+        raise HTTPException(status_code=400, detail="El usuario ya está registrado")
 
+    usuario_nuevo = Usuario(
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        password=hash_password(password)
+    )
+    db.add(usuario_nuevo)
+    db.commit()
 
-def registrar_usuario(nombre: str, apellido: str, email: str, password: str):
-    usuarios = cargar_usuarios()
-    if usuario_existe(email):
-        return False
-    usuarios.append({
-        "nombre": nombre,
-        "apellido": apellido,
-        "email": email,
-        "password": hash_password(password)
-    })
-    guardar_usuarios(usuarios)
-    return True
-
-
-def autenticar_usuario(email: str, password: str) -> bool:
-    usuarios = cargar_usuarios()
-    hashed = hash_password(password)
-    return any(u["email"] == email and u["password"] == hashed for u in usuarios)
+    return {"mensaje": "Usuario registrado exitosamente"}

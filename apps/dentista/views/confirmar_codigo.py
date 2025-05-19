@@ -1,8 +1,6 @@
 import flet as ft
 from common import colors
 
-# Vista para ingresar y validar el código de recuperación de contraseña
-
 def ConfirmarCodigoView(page: ft.Page):
     codigo_input = ft.TextField(
         label="Código de verificación",
@@ -39,19 +37,29 @@ def ConfirmarCodigoView(page: ft.Page):
     def confirmar_handler(e):
         if not all([codigo_input.value, nueva_contra_input.value, confirmar_contra_input.value]):
             mensaje.value = "⚠️ Todos los campos son obligatorios"
+            mensaje.color = colors.ERROR
         elif nueva_contra_input.value != confirmar_contra_input.value:
             mensaje.value = "⚠️ Las contraseñas no coinciden"
+            mensaje.color = colors.ERROR
         elif codigo_input.value != "123456":  # código simulado
             mensaje.value = "❌ Código inválido"
+            mensaje.color = colors.ERROR
         else:
             mensaje.value = "✅ Contraseña actualizada exitosamente"
+            mensaje.color = colors.SUCCESS
+            page.update()
             page.go("/login_dentista")
+            return
+
         page.update()
 
     def reenviar_codigo(e):
         page.snack_bar = snackbar
         snackbar.open = True
         page.update()
+
+    def volver(e):
+        page.go("/recuperar_dentista")
 
     return ft.View(
         "/confirmar_codigo",
@@ -66,13 +74,25 @@ def ConfirmarCodigoView(page: ft.Page):
                         "Confirmar",
                         on_click=confirmar_handler,
                         bgcolor=colors.PRIMARY,
-                        color=colors.TEXT_PRIMARY
+                        color=colors.TEXT_PRIMARY,
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                        width=300
                     ),
                     mensaje,
-                    ft.TextButton(
-                        "Reenviar código",
-                        on_click=reenviar_codigo,
-                        style=ft.ButtonStyle(color=colors.SECONDARY)
+                    ft.Row(
+                        [
+                            ft.TextButton(
+                                "Reenviar código",
+                                on_click=reenviar_codigo,
+                                style=ft.ButtonStyle(color=colors.SECONDARY)
+                            ),
+                            ft.TextButton(
+                                "Volver",
+                                on_click=volver,
+                                style=ft.ButtonStyle(color=colors.SECONDARY_DARK)
+                            )
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                     )
                 ],
                 spacing=15,

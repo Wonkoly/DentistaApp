@@ -5,6 +5,15 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, ROOT_DIR)
 print("🧭 Ruta base añadida:", ROOT_DIR)
 
+from fastapi import FastAPI
+from backend.routes import auth, citas  # si tienes más routers
+
+app = FastAPI()
+
+# Incluir rutas
+app.include_router(auth.router, prefix="/api")
+app.include_router(citas.router, prefix="/api")  # si lo tienes
+
 import flet as ft
 
 from apps.dentista.views.login_dentista import LoginDentistaView
@@ -14,6 +23,9 @@ from apps.dentista.views.home_dentista import HomeDentistaView
 from apps.dentista.views.servicios_dentista import ServiciosDentistaView
 from apps.dentista.views.configuracion_dentista import ConfiguracionDentistaView
 from apps.dentista.views.confirmar_codigo import ConfirmarCodigoView
+from backend.routes import auth
+app.include_router(auth.router, prefix="/api")
+
 
 def main(page: ft.Page):
     page.title = "Clinica Choyo - Dentista"

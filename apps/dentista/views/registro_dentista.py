@@ -48,6 +48,9 @@ def RegistroDentistaView(page: ft.Page):
 
         page.update()
 
+    def ir_a_login(e):
+        page.go("/login_dentista")
+
     return ft.View(
         "/registro_dentista",
         controls=[
@@ -63,12 +66,14 @@ def RegistroDentistaView(page: ft.Page):
                         "Registrarse",
                         on_click=registrar_handler,
                         bgcolor=colors.PRIMARY,
-                        color=colors.TEXT_PRIMARY
+                        color=colors.TEXT_PRIMARY,
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                        width=300
                     ),
                     mensaje,
                     ft.TextButton(
                         "¿Ya tienes cuenta? Inicia sesión",
-                        url="/login_dentista",
+                        on_click=ir_a_login,
                         style=ft.ButtonStyle(color=colors.SECONDARY)
                     )
                 ],
