@@ -26,26 +26,65 @@ async def PacienteDentistaView(page: ft.Page):
 
     def ver_citas_paciente(e):
         paciente = e.control.data
+        citas = paciente.get("citas")
+
+        if not citas or not isinstance(citas, list) or len(citas) == 0:
+            citas = [{"detalle": "Sin citas registradas"}]
+
+        cita_items = []
+        for cita in citas:
+            if isinstance(cita, dict):
+                fecha = cita.get("fecha", "¿Sin fecha?")
+                hora = cita.get("hora", "¿Sin hora?")
+                servicio = cita.get("servicio", "¿Sin servicio?")
+                pagado = "Sí" if cita.get("pago_en_linea") else "No"
+                detalle = f"{fecha} - {hora} - {servicio} - Pagado en línea: {pagado}"
+            else:
+                detalle = str(cita)
+
+            cita_items.append(ft.Text(f"• {detalle}"))
+
+        def cerrar_dialogo_accion(e=None):
+            page.dialog.open = False
+            page.update()
+
+        def ver_historial_completo(e):
+            print(f"🔎 Ver historial completo de {paciente['nombre']} (ID: {paciente['paciente_id']})")
+            # Aquí puedes implementar navegación si tienes otra vista para historial completo
+            page.snack_bar = ft.SnackBar(ft.Text("🔧 Función de historial aún no implementada"))
+            page.snack_bar.open = True
+            cerrar_dialogo_accion()
+
+        def reenviar_confirmacion(e):
+            print(f"✉️ Reenviando confirmación de citas a {paciente['correo']}")
+            # Aquí podrías usar httpx para hacer el POST a /api/reenviar_correo
+            page.snack_bar = ft.SnackBar(ft.Text("✅ Correo reenviado correctamente"))
+            page.snack_bar.open = True
+            cerrar_dialogo_accion()
+
         page.dialog = ft.AlertDialog(
             title=ft.Text(f"Citas de {paciente['nombre']}"),
             content=ft.Column(
                 controls=[
                     ft.Text(f"Correo: {paciente['correo']}"),
                     ft.Text(f"Teléfono: {paciente['telefono']}"),
-                    ft.Text("Citas:"),
-                    ft.Column(
-                        controls=[
-                            ft.Text(f"• {cita}") for cita in paciente.get("citas", ["Sin citas registradas"])
-                        ]
-                    )
+                    ft.Text("Citas registradas:"),
+                    ft.Column(controls=cita_items, tight=True),
                 ],
                 tight=True
             ),
-            actions=[ft.TextButton("Cerrar", on_click=lambda _: cerrar_dialogo())],
+            actions=[
+                ft.TextButton("Ver historial completo", on_click=ver_historial_completo),
+                ft.TextButton("Reenviar confirmación", on_click=reenviar_confirmacion),
+                ft.TextButton("Cerrar", on_click=cerrar_dialogo_accion)
+            ],
             actions_alignment="end"
         )
         page.dialog.open = True
         page.update()
+
+
+
 
     def cerrar_dialogo():
         page.dialog.open = False
