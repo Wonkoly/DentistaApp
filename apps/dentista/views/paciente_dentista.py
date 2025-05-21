@@ -7,6 +7,7 @@ API_URL = "http://127.0.0.1:8000/api/pacientes"
 
 async def PacienteDentistaView(page: ft.Page):
     pacientes_completos = []
+
     tabla = ft.DataTable(
         border=ft.border.all(1, colors.PRIMARY),
         columns=[
@@ -18,98 +19,91 @@ async def PacienteDentistaView(page: ft.Page):
         rows=[]
     )
 
-    busqueda_input = ft.TextField(
-        label="Buscar por nombre o correo",
-        width=400,
-        on_change=lambda e: filtrar_pacientes(e.control.value)
-    )
-
     def ver_citas_paciente(e):
-        paciente = e.control.data
-        citas = paciente.get("citas")
-
-        if not citas or not isinstance(citas, list) or len(citas) == 0:
-            citas = [{"detalle": "Sin citas registradas"}]
+        paciente = e.control.data or {}
+        citas = paciente.get("citas") or []
 
         cita_items = []
         for cita in citas:
-            if isinstance(cita, dict):
-                fecha = cita.get("fecha", "¿Sin fecha?")
-                hora = cita.get("hora", "¿Sin hora?")
-                servicio = cita.get("servicio", "¿Sin servicio?")
-                pagado = "Sí" if cita.get("pago_en_linea") else "No"
-                detalle = f"{fecha} - {hora} - {servicio} - Pagado en línea: {pagado}"
-            else:
-                detalle = str(cita)
-
+            if not isinstance(cita, dict):
+                continue
+            fecha = str(cita.get("fecha") or "¿Sin fecha?")
+            hora = str(cita.get("hora") or "¿Sin hora?")
+            servicio = str(cita.get("servicio") or "¿Sin servicio?")
+            pagado = "Sí" if cita.get("pago_en_linea") else "No"
+            detalle = f"{fecha} - {hora} - {servicio} - Pagado en línea: {pagado}"
             cita_items.append(ft.Text(f"• {detalle}"))
 
-        def cerrar_dialogo_accion(e=None):
-            page.dialog.open = False
-            page.update()
+        if not cita_items:
+            cita_items = [ft.Text("• Sin citas registradas")]
 
-        def ver_historial_completo(e):
-            print(f"🔎 Ver historial completo de {paciente['nombre']} (ID: {paciente['paciente_id']})")
-            # Aquí puedes implementar navegación si tienes otra vista para historial completo
-            page.snack_bar = ft.SnackBar(ft.Text("🔧 Función de historial aún no implementada"))
-            page.snack_bar.open = True
-            cerrar_dialogo_accion()
+        def cerrar(e=None):
+            if page.dialog:
+                page.dialog.open = False
+                page.update()
 
-        def reenviar_confirmacion(e):
-            print(f"✉️ Reenviando confirmación de citas a {paciente['correo']}")
-            # Aquí podrías usar httpx para hacer el POST a /api/reenviar_correo
-            page.snack_bar = ft.SnackBar(ft.Text("✅ Correo reenviado correctamente"))
-            page.snack_bar.open = True
-            cerrar_dialogo_accion()
-
-        page.dialog = ft.AlertDialog(
-            title=ft.Text(f"Citas de {paciente['nombre']}"),
+        dialogo = ft.AlertDialog(
+            title=ft.Text(f"Citas de {paciente.get('nombre', 'Paciente')}"),
             content=ft.Column(
                 controls=[
-                    ft.Text(f"Correo: {paciente['correo']}"),
-                    ft.Text(f"Teléfono: {paciente['telefono']}"),
-                    ft.Text("Citas registradas:"),
-                    ft.Column(controls=cita_items, tight=True),
+                    ft.Text(f"Correo: {paciente.get('correo', 'Desconocido')}"),
+                    ft.Text(f"Teléfono: {paciente.get('telefono', 'Desconocido')}"),
+                    ft.Text("Citas:"),
+                    ft.Column(controls=cita_items or [ft.Text("• Sin información disponible")])
                 ],
                 tight=True
             ),
             actions=[
-                ft.TextButton("Ver historial completo", on_click=ver_historial_completo),
-                ft.TextButton("Reenviar confirmación", on_click=reenviar_confirmacion),
-                ft.TextButton("Cerrar", on_click=cerrar_dialogo_accion)
+                ft.TextButton("Cerrar", on_click=cerrar)
             ],
             actions_alignment="end"
         )
+
+        page.dialog = dialogo
         page.dialog.open = True
         page.update()
 
+    def actualizar_tabla(pacientes):
+        tabla.rows = []
 
+        for p in pacientes:
+            nombre = p.get("nombre", "Desconocido")
+            correo = p.get("correo", "Sin correo")
+            telefono = p.get("telefono", "Sin teléfono")
 
+            if not all([nombre, correo, telefono]):
+                continue
 
-    def cerrar_dialogo():
-        page.dialog.open = False
-        page.update()
+            tabla.rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(str(nombre))),
+                        ft.DataCell(ft.Text(str(correo))),
+                        ft.DataCell(ft.Text(str(telefono))),
+                        ft.DataCell(
+                            ft.IconButton(
+                                icon=ft.Icons.VISIBILITY,
+                                data=p,
+                                on_click=ver_citas_paciente
+                            )
+                        )
+                    ]
+                )
+            )
 
     def filtrar_pacientes(valor):
         valor = valor.lower()
         pacientes_filtrados = [
             p for p in pacientes_completos
-            if valor in p["nombre"].lower() or valor in p["correo"].lower()
+            if valor in p.get("nombre", "").lower() or valor in p.get("correo", "").lower()
         ]
         actualizar_tabla(pacientes_filtrados)
 
-    def actualizar_tabla(pacientes):
-        tabla.rows = [
-            ft.DataRow(
-                cells=[
-                    ft.DataCell(ft.Text(p["nombre"])),
-                    ft.DataCell(ft.Text(p["correo"])),
-                    ft.DataCell(ft.Text(p["telefono"])),
-                    ft.DataCell(ft.IconButton(icon=ft.Icons.VISIBILITY, data=p, on_click=ver_citas_paciente))
-                ]
-            ) for p in pacientes
-        ]
-        page.update()
+    busqueda_input = ft.TextField(
+        label="Buscar por nombre o correo",
+        width=400,
+        on_change=lambda e: filtrar_pacientes(e.control.value)
+    )
 
     try:
         async with httpx.AsyncClient() as client:
@@ -123,26 +117,27 @@ async def PacienteDentistaView(page: ft.Page):
         traceback.print_exc()
         tabla.rows = [ft.DataRow(cells=[ft.DataCell(ft.Text("Error al obtener datos"))])]
 
-    page.views.clear()
-    page.views.append(
-        ft.View(
-            "/pacientes_dentista",
-            controls=[
-                ft.Container(
-                    content=ft.Column(
-                        controls=[
-                            ft.Text("👥 Lista de Pacientes", size=24, weight=ft.FontWeight.BOLD, color=colors.PRIMARY_DARK),
-                            busqueda_input,
-                            tabla
-                        ],
-                        spacing=20
-                    ),
-                    padding=20,
-                    expand=True
-                ),
-                NavbarDentista(page, ruta_actual=page.route),
-            ],
-            vertical_alignment=ft.MainAxisAlignment.START
+    controles_vista = [
+        ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Text("👥 Lista de Pacientes", size=24, weight=ft.FontWeight.BOLD, color=colors.PRIMARY_DARK),
+                    busqueda_input,
+                    tabla
+                ],
+                spacing=20
+            ),
+            padding=20,
+            expand=True
         )
+    ]
+
+    navbar = NavbarDentista(page, ruta_actual=page.route)
+    if navbar:
+        controles_vista.append(navbar)
+
+    return ft.View(
+        "/pacientes_dentista",
+        controls=controles_vista,
+        vertical_alignment=ft.MainAxisAlignment.START
     )
-    page.update()

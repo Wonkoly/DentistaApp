@@ -6,12 +6,12 @@ from datetime import datetime
 import httpx
 
 servicio_map = {
-    "Limpieza Bucal": 1,
-    "Extracción Dental": 2,
-    "Obturación": 3,
-    "Ortodoncia": 4,
-    "Blanqueamiento": 5,
-    "Carillas Dentales": 6
+    "Limpieza Bucal": (1, 500),
+    "Extracción Dental": (2, 700),
+    "Obturación": (3, 900),
+    "Ortodoncia": (4, 1500),
+    "Blanqueamiento": (5, 1200),
+    "Carillas Dentales": (6, 1800)
 }
 
 def ServiciosDentistaView(page: ft.Page):
@@ -22,6 +22,18 @@ def ServiciosDentistaView(page: ft.Page):
         border_color=colors.PRIMARY,
         focused_border_color=colors.PRIMARY_DARK
     )
+
+    precio_text = ft.Text(value="Precio del servicio: $0", size=16)
+    total_text = ft.Text(value="Total: $0", size=16, weight=ft.FontWeight.BOLD)
+
+    def actualizar_precio(servicio):
+        if servicio in servicio_map:
+            precio = servicio_map[servicio][1]
+            precio_text.value = f"Precio del servicio: ${precio}"
+            total_text.value = f"Total: ${precio}"
+            page.update()
+
+    servicio_dropdown.on_change = lambda e: actualizar_precio(e.control.value)
 
     nombre_input = ft.TextField(label="Nombre del paciente", width=300, border_color=colors.PRIMARY, focused_border_color=colors.PRIMARY_DARK)
     correo_input = ft.TextField(label="Correo del paciente", width=300, border_color=colors.PRIMARY, focused_border_color=colors.PRIMARY_DARK)
@@ -38,10 +50,15 @@ def ServiciosDentistaView(page: ft.Page):
         if not re.fullmatch(r"\d{2}/\d{2}/\d{4}", valor): return False
         try: return datetime.strptime(valor, "%d/%m/%Y").year >= 2025
         except ValueError: return False
-    def validar_hora(valor):
+    def validar_hora(valor, periodo):
         if not re.fullmatch(r"\d{2}:\d{2}", valor): return False
         h, m = map(int, valor.split(":"))
-        return 0 <= h <= 23 and 0 <= m <= 59
+        if not (1 <= h <= 12 and 0 <= m <= 59): return False
+        if periodo == "AM":
+            return (h == 12 and m == 0) or (7 <= h <= 11)
+        elif periodo == "PM":
+            return 12 <= h <= 7  # 12:00 PM to 7:59 PM
+        return False
 
     async def registrar_cita(e):
         mensaje.value = ""
@@ -60,8 +77,8 @@ def ServiciosDentistaView(page: ft.Page):
             errores.append("Fecha inválida. Usa DD/MM/YYYY y año ≥ 2025")
             fecha_input.border_color = colors.ERROR
         else: fecha_input.border_color = colors.PRIMARY
-        if not validar_hora(hora_input.value):
-            errores.append("Hora inválida. Usa HH:MM con valores válidos")
+        if not validar_hora(hora_input.value, am_pm.value):
+            errores.append("Hora inválida. Solo entre 07:00 AM y 07:00 PM")
             hora_input.border_color = colors.ERROR
         else: hora_input.border_color = colors.PRIMARY
         if not am_pm.value:
@@ -78,7 +95,7 @@ def ServiciosDentistaView(page: ft.Page):
             page.update()
             return
 
-        servicio_id = servicio_map[servicio_dropdown.value]
+        servicio_id = servicio_map[servicio_dropdown.value][0]
 
         try:
             usuario_id = page.session.get("usuario_id")
@@ -93,7 +110,7 @@ def ServiciosDentistaView(page: ft.Page):
                     "notas": notas_input.value,
                     "servicio": servicio_id,
                     "fecha": datetime.strptime(fecha_input.value, "%d/%m/%Y").strftime("%Y-%m-%d"),
-                    "hora": hora_input.value,
+                    "hora": hora_input.value + " " + am_pm.value,
                     "sucursal": ""
                 })
 
@@ -110,11 +127,6 @@ def ServiciosDentistaView(page: ft.Page):
 
         page.update()
 
-    # Depuración en consola
-    print("✔ Servicios cargados en el dropdown:")
-    for opt in servicio_dropdown.options:
-        print(" -", opt.text)
-
     return ft.View(
         "/servicios_dentista",
         controls=[
@@ -122,6 +134,8 @@ def ServiciosDentistaView(page: ft.Page):
                 content=ft.Column([
                     ft.Text("Registro Manual de Cita", size=24, weight=ft.FontWeight.BOLD, color=colors.SECONDARY),
                     servicio_dropdown,
+                    precio_text,
+                    total_text,
                     nombre_input,
                     correo_input,
                     fecha_input,

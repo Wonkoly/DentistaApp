@@ -1,25 +1,21 @@
-# common/colors.py
+# Paleta LUNA personalizada
 PRIMARY = "#54ACBF"
 PRIMARY_LIGHT = "#A7EBF2"
 PRIMARY_DARK = "#26658C"
 SECONDARY = "#023859"
 SECONDARY_DARK = "#011C40"
 
-BACKGROUND = "F6F6F6"
+# Colores de fondo y texto
+BACKGROUND = "#F6F6F6"
 TEXT = "#000000"
-
-TEXT_PRIMARY = "white"
-TEXT_DARK = "black"
 TEXT_LIGHT = "#CCCCCC"
-
-ERROR = "#D9534F"
-SUCCESS = "#5cb85c"
-
-
-
-# Alternativas semánticas (más legibles)
-ACCENT = PRIMARY
-SURFACE = PRIMARY_DARK
 TEXT_PRIMARY = "#FFFFFF"
 TEXT_DARK = "#212121"
-ERROR = "#FF5252"
+
+# Estados semánticos
+ERROR = "#FF5252"       # Error fuerte
+SUCCESS = "#5CB85C"     # Verde positivo
+
+# Alternativas semánticas (alias)
+ACCENT = PRIMARY
+SURFACE = PRIMARY_DARK
