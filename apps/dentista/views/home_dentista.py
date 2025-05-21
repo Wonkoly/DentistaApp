@@ -9,17 +9,20 @@ async def HomeDentistaView(page: ft.Page):
     citas = []
 
     async def cargar_citas():
-        nonlocal citas, calendario_real
+        nonlocal citas
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(f"http://localhost:8000/api/citas_completas?usuario_id={usuario_id}")
                 if response.status_code == 200:
                     citas = response.json()
-                    page.views.clear()
-                    page.views.append(await HomeDentistaView(page))
-                    page.update()
         except Exception as e:
             print("❌ Error al obtener citas:", e)
+
+    # 🟢 CARGAR CITAS ANTES DE MOSTRAR LA VISTA
+    await cargar_citas()
+
+    ...
+
 
     async def finalizar_cita(cita):
         try:

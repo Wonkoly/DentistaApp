@@ -8,17 +8,19 @@ from datetime import datetime, time
 
 router = APIRouter()
 
+
 class CitaInput(BaseModel):
-    usuario_id: int 
+    usuario_id: int
     nombre: str
     apellido: str
     correo: str
     telefono: str
     notas: str = ""
     servicio: int
-    fecha: str  # "YYYY-MM-DD"
-    hora: str   # "HH:MM AM/PM" o "HH:MM"
+    fecha: str
+    hora: str
     sucursal: str = ""
+
 
 @router.get("/api/citas/")
 def listar_citas(db: Session = Depends(get_db)):
@@ -26,9 +28,7 @@ def listar_citas(db: Session = Depends(get_db)):
 
 
 @router.post("/api/citas/")
-@router.post("/api/citas/")
 def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
-    # Intentar parsear la fecha y hora en múltiples formatos
     formatos = ["%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M"]
     fecha_hora = None
     for formato in formatos:
@@ -39,26 +39,22 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
             continue
     if not fecha_hora:
         raise HTTPException(
-    status_code=400,
-    detail="La hora seleccionada está fuera del horario laboral permitido (2:00 PM a 8:00 PM, excluyendo 4:30–5:00 PM)."
-)
+            status_code=400,
+            detail="La hora seleccionada está fuera del horario laboral permitido (2:00 PM a 8:00 PM, excluyendo 4:30–5:00 PM)."
+        )
 
-
-    # Validación de horario laboral
     hora_cita = fecha_hora.time()
-    hora_inicio = time(14, 0)            # 2:00 PM
-    hora_descanso_ini = time(16, 30)     # 4:30 PM
-    hora_descanso_fin = time(17, 0)      # 5:00 PM
-    hora_fin = time(20, 0)               # 8:00 PM
+    hora_inicio = time(14, 0)
+    hora_descanso_ini = time(16, 30)
+    hora_descanso_fin = time(17, 0)
+    hora_fin = time(20, 0)
 
     if not (hora_inicio <= hora_cita <= hora_fin) or (hora_descanso_ini <= hora_cita < hora_descanso_fin):
         raise HTTPException(
-    status_code=400,
-    detail="La hora seleccionada está fuera del horario laboral permitido (2:00 PM a 8:00 PM, excluyendo 4:30–5:00 PM)."
-)
+            status_code=400,
+            detail="La hora seleccionada está fuera del horario laboral permitido (2:00 PM a 8:00 PM, excluyendo 4:30–5:00 PM)."
+        )
 
-
-    # Buscar o registrar paciente
     paciente = db.query(Paciente).filter(Paciente.email == data.correo).first()
     if not paciente:
         paciente = Paciente(
@@ -72,7 +68,6 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(paciente)
 
-    # Crear cita
     cita = Cita(
         paciente_id=paciente.id,
         servicio_id=data.servicio,
@@ -87,8 +82,6 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
     return {"mensaje": "Cita registrada correctamente", "id": cita.id}
 
 
-
-@router.get("/api/pacientes")
 @router.get("/api/pacientes")
 def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     pacientes_db = db.query(Paciente).all()
@@ -96,8 +89,7 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
 
     for paciente in pacientes_db:
         if not paciente.nombre or not paciente.email:
-            continue  # 🔍 Saltar si está incompleto
-
+            continue
         citas = db.query(Cita).filter(Cita.paciente_id == paciente.id).all()
         citas_formateadas = [
             f"{cita.fecha_hora.strftime('%Y-%m-%d %H:%M')} - Servicio ID: {cita.servicio_id}"
@@ -113,7 +105,6 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     return resultado
 
 
-
 @router.get("/api/citas_completas")
 def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(get_db)):
     citas = db.query(Cita).filter(Cita.usuario_id == usuario_id).all()
@@ -125,18 +116,20 @@ def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(
             "nombre": f"{cita.paciente.nombre} {cita.paciente.apellido}",
             "fecha": cita.fecha_hora.strftime("%Y-%m-%d"),
             "hora": cita.fecha_hora.strftime("%H:%M"),
-            "servicio": cita.servicio.nombre,
+            "servicio": cita.servicio.nombre if cita.servicio else f"ID {cita.servicio_id}",
             "notas": cita.notas or "Sin notas",
             "pago_en_linea": "Sí" if cita.estado == "pagado" else "No"
         })
 
     return resultado
+
+
 @router.put("/api/citas/{cita_id}/finalizar")
 def finalizar_cita(cita_id: int, db: Session = Depends(get_db)):
     cita = db.query(Cita).filter(Cita.id == cita_id).first()
     if not cita:
         raise HTTPException(status_code=404, detail="Cita no encontrada")
-    
+
     cita.estado = "finalizada"
     db.commit()
 
@@ -154,10 +147,9 @@ def obtener_citas_finalizadas(usuario_id: int = Query(...), db: Session = Depend
             "nombre": f"{cita.paciente.nombre} {cita.paciente.apellido}",
             "fecha": cita.fecha_hora.strftime("%Y-%m-%d"),
             "hora": cita.fecha_hora.strftime("%H:%M"),
-            "servicio": cita.servicio.nombre,
+            "servicio": cita.servicio.nombre if cita.servicio else f"ID {cita.servicio_id}",
             "notas": cita.notas or "Sin notas",
             "pago_en_linea": "Sí" if cita.estado == "pagado" else "No"
         })
 
     return resultado
-
