@@ -31,10 +31,11 @@ async def HistorialCitasView(page: ft.Page):
                         ft.Text(f"👤 {cita['nombre']}"),
                         ft.Text(f"🦷 {cita['servicio']}"),
                         ft.Text(f"📝 {cita['notas']}"),
-                        ft.Text(f"💳 Pagado: {cita['pago_en_linea']}")
+                        ft.Text(f"💳 Pagado: {cita['pago_en_linea']}"),
+                        ft.Text(f"📌 Estado: {cita['estado'].capitalize()} ✅", color=colors.SUCCESS)
                     ], spacing=5),
                     padding=10,
-                    bgcolor=colors.PRIMARY_LIGHT,
+                    bgcolor=colors.SECONDARY_LIGHT,
                     border_radius=10,
                     width=360
                 ) for cita in citas

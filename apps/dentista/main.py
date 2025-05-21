@@ -65,7 +65,7 @@ def main(page: ft.Page):
                 view = VerCitasView(page)
                 print("✅ VerCitasView cargado:", type(view))
                 page.views.append(view)
-            case "/historial_citas":  # ✅ NUEVA RUTA
+            case "/historial_citas":
                 view = await HistorialCitasView(page)
                 page.views.append(view)
 
@@ -76,4 +76,10 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.WEB_BROWSER, port=8081, assets_dir="assets")
+    ft.app(
+        target=main,
+        view=ft.WEB_BROWSER,
+        port=8081,
+        assets_dir="assets"
+        # ❌ async_mode eliminado porque flet-desktop no lo soporta
+    )

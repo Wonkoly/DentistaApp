@@ -8,7 +8,6 @@ from datetime import datetime, time
 
 router = APIRouter()
 
-
 class CitaInput(BaseModel):
     usuario_id: int
     nombre: str
@@ -107,11 +106,12 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
 
 @router.get("/api/citas_completas")
 def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(get_db)):
-    citas = db.query(Cita).filter(Cita.usuario_id == usuario_id).all()
+    citas = db.query(Cita).filter(Cita.usuario_id == usuario_id, Cita.estado != "finalizada").all()
     resultado = []
 
     for cita in citas:
         resultado.append({
+            "id": cita.id,
             "paciente_id": cita.paciente.id,
             "nombre": f"{cita.paciente.nombre} {cita.paciente.apellido}",
             "fecha": cita.fecha_hora.strftime("%Y-%m-%d"),
@@ -143,13 +143,15 @@ def obtener_citas_finalizadas(usuario_id: int = Query(...), db: Session = Depend
 
     for cita in citas:
         resultado.append({
+            "id": cita.id,
             "paciente_id": cita.paciente.id,
             "nombre": f"{cita.paciente.nombre} {cita.paciente.apellido}",
             "fecha": cita.fecha_hora.strftime("%Y-%m-%d"),
             "hora": cita.fecha_hora.strftime("%H:%M"),
             "servicio": cita.servicio.nombre if cita.servicio else f"ID {cita.servicio_id}",
             "notas": cita.notas or "Sin notas",
-            "pago_en_linea": "Sí" if cita.estado == "pagado" else "No"
+            "pago_en_linea": "Sí" if cita.estado == "pagado" else "No",
+            "estado": cita.estado
         })
 
     return resultado
