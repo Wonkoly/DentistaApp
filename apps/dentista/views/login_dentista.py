@@ -2,12 +2,32 @@ import flet as ft
 import re
 import httpx
 from common import colors
+from typing import Tuple
+
 
 API_LOGIN_URL = "http://localhost:8000/api/usuarios/login"
 
-def validar_email(email: str) -> bool:
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    return re.match(pattern, email) is not None
+def validar_email(email: str) -> Tuple[bool, str]:
+
+    pattern = r'^[\w\.-]+@([\w\.-]+\.\w+)$'
+    match = re.match(pattern, email)
+    if not match:
+        return False, "Correo electrónico no válido"
+
+    dominio = email.split('@')[1].lower()
+
+    dominios_prohibidos = {
+        "gmai.com": "¿Quisiste decir gmail.com?",
+        "hotmial.com": "¿Quisiste decir hotmail.com?",
+        "yaho.com": "¿Quisiste decir yahoo.com?",
+        "outlok.com": "¿Quisiste decir outlook.com?",
+        "gmal.com": "¿Quisiste decir gmail.com?"
+    }
+
+    if dominio in dominios_prohibidos:
+        return False, dominios_prohibidos[dominio]
+
+    return True, ""
 
 def LoginDentistaView(page: ft.Page):
     email_input = ft.TextField(
@@ -29,19 +49,49 @@ def LoginDentistaView(page: ft.Page):
     mensaje = ft.Text(value="", color=colors.ERROR, size=14)
 
     async def login_handler(e):
-        if not validar_email(email_input.value):
-            mensaje.value = "⚠️ Correo inválido"
+        # Reiniciar estilos de error
+        email_input.error_text = None
+        password_input.error_text = None
+        email_input.border_color = colors.PRIMARY
+        password_input.border_color = colors.PRIMARY
+
+        correo = email_input.value.strip()
+        contrasena = password_input.value.strip()
+
+        es_valido, mensaje_error = validar_email(correo)
+
+        if not es_valido:
+            mensaje.value = f"⚠️ {mensaje_error}"
             mensaje.color = colors.ERROR
-        elif not password_input.value:
+            email_input.error_text = mensaje_error
+            email_input.border_color = colors.ERROR
+
+        elif not contrasena:
             mensaje.value = "⚠️ Ingresa la contraseña"
             mensaje.color = colors.ERROR
+            password_input.error_text = "Campo requerido"
+            password_input.border_color = colors.ERROR
+
+        elif len(contrasena) < 8 or len(contrasena) > 16:
+            mensaje.value = "⚠️ La contraseña debe tener entre 8 y 16 caracteres"
+            mensaje.color = colors.ERROR
+            password_input.error_text = "Longitud inválida (8-16)"
+            password_input.border_color = colors.ERROR
+
         else:
             try:
                 async with httpx.AsyncClient() as client:
-                    response = await client.post(API_LOGIN_URL, params={
-                        "email": email_input.value,
-                        "password": password_input.value
-                    })
+                    headers = {"Content-Type": "application/json"}
+                    response = await client.post(
+                        API_LOGIN_URL,
+                        json={
+                            "email": correo,
+                            "password": contrasena
+                        },
+                        headers=headers
+    )
+
+
 
                 if response.status_code == 200:
                     datos = response.json()
@@ -51,19 +101,21 @@ def LoginDentistaView(page: ft.Page):
                     # Guardamos datos del usuario en la sesión (memoria temporal)
                     page.session.set("usuario_id", datos["usuario_id"])
                     page.session.set("usuario_nombre", datos["nombre"])
-
                     page.go("/home_dentista")
                     return
                 else:
                     mensaje.value = "❌ Usuario o contraseña incorrectos"
                     mensaje.color = colors.ERROR
+                    email_input.border_color = colors.ERROR
+                    password_input.border_color = colors.ERROR
 
             except Exception as err:
                 mensaje.value = f"❌ Error de conexión: {err}"
                 mensaje.color = colors.ERROR
 
-        page.update()
-
+        email_input.update()
+        password_input.update()
+        mensaje.update()
 
     return ft.View(
         "/login_dentista",

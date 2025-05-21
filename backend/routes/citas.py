@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import get_db
@@ -8,8 +8,6 @@ from datetime import datetime
 
 router = APIRouter()
 
-from pydantic import BaseModel
-
 class CitaInput(BaseModel):
     nombre: str
     apellido: str
@@ -17,16 +15,17 @@ class CitaInput(BaseModel):
     telefono: str
     notas: str = ""
     servicio: int
-    fecha: str  # formato "YYYY-MM-DD"
-    hora: str   # formato "HH:MM"
+    fecha: str  # "YYYY-MM-DD"
+    hora: str   # "HH:MM"
     sucursal: str = ""
+    usuario_id: int  # ✅ ¡Aquí se incluye correctamente!
 
 @router.get("/api/citas/")
 def listar_citas(db: Session = Depends(get_db)):
     return db.query(Cita).all()
+
 @router.post("/api/citas/")
 def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
-    # Verifica si el paciente ya existe
     paciente = db.query(Paciente).filter(Paciente.email == data.correo).first()
 
     if not paciente:
@@ -40,23 +39,22 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
         db.add(paciente)
         db.commit()
         db.refresh(paciente)
-        
 
-    # Crear cita asociada
     fecha_hora = datetime.strptime(f"{data.fecha} {data.hora}", "%Y-%m-%d %H:%M")
 
     cita = Cita(
         paciente_id=paciente.id,
-        servicio_id=data.servicio,  # asegurarte que exista en la tabla servicios
+        servicio_id=data.servicio,
         fecha_hora=fecha_hora,
+        estado="pendiente",
         notas=data.notas,
-        estado="pendiente"
+        usuario_id=data.usuario_id  # ✅ correctamente asignado
     )
-
     db.add(cita)
     db.commit()
 
     return {"mensaje": "Cita registrada correctamente", "id": cita.id}
+
 @router.get("/api/pacientes")
 def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     pacientes_db = db.query(Paciente).all()
@@ -65,7 +63,7 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     for paciente in pacientes_db:
         citas = db.query(Cita).filter(Cita.paciente_id == paciente.id).all()
         citas_formateadas = [
-            f"{cita.fecha_hora.strftime('%Y-%m-%d %H:%M')} - Servicio ID: {cita.servicio_id}" 
+            f"{cita.fecha_hora.strftime('%Y-%m-%d %H:%M')} - Servicio ID: {cita.servicio_id}"
             for cita in citas
         ]
         resultado.append({
@@ -73,6 +71,25 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
             "correo": paciente.email,
             "telefono": paciente.telefono,
             "citas": citas_formateadas
+        })
+
+    return resultado
+
+# ✅ Nuevo endpoint para mostrar solo las citas de un usuario
+@router.get("/api/citas_completas")
+def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(get_db)):
+    citas = db.query(Cita).filter(Cita.usuario_id == usuario_id).all()
+    resultado = []
+
+    for cita in citas:
+        resultado.append({
+            "paciente_id": cita.paciente.id,
+            "nombre": f"{cita.paciente.nombre} {cita.paciente.apellido}",
+            "fecha": cita.fecha_hora.strftime("%Y-%m-%d"),
+            "hora": cita.fecha_hora.strftime("%H:%M"),
+            "servicio": cita.servicio.nombre,
+            "notas": cita.notas or "Sin notas",
+            "pago_en_linea": "Sí" if cita.estado == "pagado" else "No"
         })
 
     return resultado

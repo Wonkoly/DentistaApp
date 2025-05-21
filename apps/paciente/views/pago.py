@@ -89,9 +89,9 @@ def PagoView(page: ft.Page) -> ft.View:
 
     resumen_pago = ft.Column([
         ft.Divider(thickness=1),
-        ft.Text("Subtotal: $500.00"),
-        ft.Text("Comisión: $12.00"),
-        ft.Text("Total: $512.00", weight="bold", size=16)
+        ft.Text("Subtotal: $1500.00"),
+        ft.Text("Comisión: $0.00"),
+        ft.Text("Total: $1500.00", weight="bold", size=16)
     ], spacing=4)
 
     botones = ft.Row([
@@ -177,7 +177,7 @@ def PagoExitosoView(page: ft.Page) -> ft.View:
             ft.Text(f"🏦 Tarjeta: {tarjeta_info}"),
             ft.Text(f"📆 Expiración: {fecha}"),
             ft.Text(f"🔐 CVV: {cvv}"),
-            ft.Text(f"💰 Total pagado: $512.00", weight="bold", size=18),
+            ft.Text(f"💰 Total pagado: $1500.00", weight="bold", size=18),
             ft.Divider(),
             ft.Row([
                 ft.TextButton("← Regresar al inicio", on_click=lambda _: page.go("/"), style=ft.ButtonStyle(color=colors.PRIMARY)),
