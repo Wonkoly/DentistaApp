@@ -2,7 +2,7 @@ import flet as ft
 from common import colors
 from components.navbar import NavbarDentista
 import re
-from datetime import datetime
+from datetime import datetime, time
 import httpx
 
 servicio_map = {
@@ -50,41 +50,68 @@ def ServiciosDentistaView(page: ft.Page):
         if not re.fullmatch(r"\d{2}/\d{2}/\d{4}", valor): return False
         try: return datetime.strptime(valor, "%d/%m/%Y").year >= 2025
         except ValueError: return False
+
     def validar_hora(valor, periodo):
-        if not re.fullmatch(r"\d{2}:\d{2}", valor): return False
-        h, m = map(int, valor.split(":"))
-        if not (1 <= h <= 12 and 0 <= m <= 59): return False
-        if periodo == "AM":
-            return (h == 12 and m == 0) or (7 <= h <= 11)
-        elif periodo == "PM":
-            return 12 <= h <= 7  # 12:00 PM to 7:59 PM
-        return False
+        if not re.fullmatch(r"\d{1,2}:\d{2}", valor):
+            return False
+        try:
+            h, m = map(int, valor.split(":"))
+            if not (1 <= h <= 12 and 0 <= m <= 59):
+                return False
+            hora_24 = h % 12
+            if periodo == "PM":
+                hora_24 += 12
+            elif periodo != "AM":
+                return False
+            hora_actual = time(hora_24, m)
+            hora_inicio = time(14, 0)
+            descanso_inicio = time(16, 30)
+            descanso_fin = time(17, 0)
+            hora_fin = time(20, 0)
+            if not (hora_inicio <= hora_actual <= hora_fin):
+                return False
+            if descanso_inicio <= hora_actual < descanso_fin:
+                return False
+            return True
+        except:
+            return False
 
     async def registrar_cita(e):
         mensaje.value = ""
         errores = []
 
-        if not servicio_dropdown.value: errores.append("Selecciona un servicio")
+        if not servicio_dropdown.value:
+            errores.append("Selecciona un servicio")
+
         if not validar_nombre(nombre_input.value):
             errores.append("Nombre inválido: mínimo 20 letras, sin números ni símbolos")
             nombre_input.border_color = colors.ERROR
-        else: nombre_input.border_color = colors.PRIMARY
+        else:
+            nombre_input.border_color = colors.PRIMARY
+
         if not validar_correo(correo_input.value):
             errores.append("Correo inválido. Ej: nombre@ejemplo.com")
             correo_input.border_color = colors.ERROR
-        else: correo_input.border_color = colors.PRIMARY
+        else:
+            correo_input.border_color = colors.PRIMARY
+
         if not validar_fecha(fecha_input.value):
             errores.append("Fecha inválida. Usa DD/MM/YYYY y año ≥ 2025")
             fecha_input.border_color = colors.ERROR
-        else: fecha_input.border_color = colors.PRIMARY
+        else:
+            fecha_input.border_color = colors.PRIMARY
+
         if not validar_hora(hora_input.value, am_pm.value):
-            errores.append("Hora inválida. Solo entre 07:00 AM y 07:00 PM")
+            errores.append("Hora inválida. Solo entre 2:00 PM y 8:00 PM (excepto 4:30–5:00 PM)")
             hora_input.border_color = colors.ERROR
-        else: hora_input.border_color = colors.PRIMARY
+        else:
+            hora_input.border_color = colors.PRIMARY
+
         if not am_pm.value:
             errores.append("Selecciona AM o PM")
             am_pm.border_color = colors.ERROR
-        else: am_pm.border_color = colors.PRIMARY
+        else:
+            am_pm.border_color = colors.PRIMARY
 
         if servicio_dropdown.value not in servicio_map:
             errores.append("El servicio seleccionado no es válido")
@@ -117,6 +144,7 @@ def ServiciosDentistaView(page: ft.Page):
             if response.status_code == 200:
                 mensaje.value = "✅ Cita registrada correctamente"
                 mensaje.color = colors.SUCCESS
+                page.go("/pacientes_dentista")
             else:
                 mensaje.value = f"❌ Error al registrar cita: {response.text}"
                 mensaje.color = colors.ERROR

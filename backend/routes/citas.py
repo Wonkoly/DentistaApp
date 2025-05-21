@@ -26,15 +26,23 @@ def listar_citas(db: Session = Depends(get_db)):
 
 
 @router.post("/api/citas/")
+@router.post("/api/citas/")
 def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
-    # Convertir hora en formato 12h o 24h
-    try:
-        fecha_hora = datetime.strptime(f"{data.fecha} {data.hora}", "%Y-%m-%d %I:%M %p")
-    except ValueError:
+    # Intentar parsear la fecha y hora en múltiples formatos
+    formatos = ["%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M"]
+    fecha_hora = None
+    for formato in formatos:
         try:
-            fecha_hora = datetime.strptime(f"{data.fecha} {data.hora}", "%Y-%m-%d %H:%M")
+            fecha_hora = datetime.strptime(f"{data.fecha} {data.hora}", formato)
+            break
         except ValueError:
-            raise HTTPException(status_code=400, detail="Formato de fecha y hora inválido.")
+            continue
+    if not fecha_hora:
+        raise HTTPException(
+    status_code=400,
+    detail="La hora seleccionada está fuera del horario laboral permitido (2:00 PM a 8:00 PM, excluyendo 4:30–5:00 PM)."
+)
+
 
     # Validación de horario laboral
     hora_cita = fecha_hora.time()
@@ -44,7 +52,11 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
     hora_fin = time(20, 0)               # 8:00 PM
 
     if not (hora_inicio <= hora_cita <= hora_fin) or (hora_descanso_ini <= hora_cita < hora_descanso_fin):
-        raise HTTPException(status_code=400, detail="La hora seleccionada no está disponible dentro del horario laboral.")
+        raise HTTPException(
+    status_code=400,
+    detail="La hora seleccionada está fuera del horario laboral permitido (2:00 PM a 8:00 PM, excluyendo 4:30–5:00 PM)."
+)
+
 
     # Buscar o registrar paciente
     paciente = db.query(Paciente).filter(Paciente.email == data.correo).first()
@@ -75,12 +87,17 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
     return {"mensaje": "Cita registrada correctamente", "id": cita.id}
 
 
+
+@router.get("/api/pacientes")
 @router.get("/api/pacientes")
 def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     pacientes_db = db.query(Paciente).all()
     resultado = []
 
     for paciente in pacientes_db:
+        if not paciente.nombre or not paciente.email:
+            continue  # 🔍 Saltar si está incompleto
+
         citas = db.query(Cita).filter(Cita.paciente_id == paciente.id).all()
         citas_formateadas = [
             f"{cita.fecha_hora.strftime('%Y-%m-%d %H:%M')} - Servicio ID: {cita.servicio_id}"
@@ -89,11 +106,12 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
         resultado.append({
             "nombre": paciente.nombre,
             "correo": paciente.email,
-            "telefono": paciente.telefono,
+            "telefono": paciente.telefono or "No disponible",
             "citas": citas_formateadas
         })
 
     return resultado
+
 
 
 @router.get("/api/citas_completas")
@@ -113,3 +131,33 @@ def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(
         })
 
     return resultado
+@router.put("/api/citas/{cita_id}/finalizar")
+def finalizar_cita(cita_id: int, db: Session = Depends(get_db)):
+    cita = db.query(Cita).filter(Cita.id == cita_id).first()
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+    
+    cita.estado = "finalizada"
+    db.commit()
+
+    return {"mensaje": "Cita finalizada correctamente"}
+
+
+@router.get("/api/citas/finalizadas")
+def obtener_citas_finalizadas(usuario_id: int = Query(...), db: Session = Depends(get_db)):
+    citas = db.query(Cita).filter(Cita.usuario_id == usuario_id, Cita.estado == "finalizada").all()
+    resultado = []
+
+    for cita in citas:
+        resultado.append({
+            "paciente_id": cita.paciente.id,
+            "nombre": f"{cita.paciente.nombre} {cita.paciente.apellido}",
+            "fecha": cita.fecha_hora.strftime("%Y-%m-%d"),
+            "hora": cita.fecha_hora.strftime("%H:%M"),
+            "servicio": cita.servicio.nombre,
+            "notas": cita.notas or "Sin notas",
+            "pago_en_linea": "Sí" if cita.estado == "pagado" else "No"
+        })
+
+    return resultado
+

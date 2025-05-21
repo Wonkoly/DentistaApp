@@ -64,15 +64,16 @@ async def PacienteDentistaView(page: ft.Page):
         page.update()
 
     def actualizar_tabla(pacientes):
-        tabla.rows = []
-
+        tabla.rows.clear()
         for p in pacientes:
             nombre = p.get("nombre", "Desconocido")
             correo = p.get("correo", "Sin correo")
             telefono = p.get("telefono", "Sin teléfono")
 
-            if not all([nombre, correo, telefono]):
+            if not nombre or not correo:
                 continue
+            telefono = telefono or "No disponible"
+
 
             tabla.rows.append(
                 ft.DataRow(
@@ -99,30 +100,60 @@ async def PacienteDentistaView(page: ft.Page):
         ]
         actualizar_tabla(pacientes_filtrados)
 
+    async def cargar_y_actualizar(_=None):
+        nonlocal pacientes_completos
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(API_URL)
+                response.raise_for_status()
+                pacientes_completos = response.json()
+                actualizar_tabla(pacientes_completos)
+
+            # ✅ Mostrar SnackBar de éxito
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("✅ Pacientes actualizados correctamente"),
+                bgcolor=colors.SUCCESS
+            )
+            page.snack_bar.open = True
+
+        except Exception as e:
+            print("❌ Error cargando pacientes:", e)
+            import traceback
+            traceback.print_exc()
+            tabla.rows = [ft.DataRow(cells=[ft.DataCell(ft.Text("Error al obtener datos"))])]
+
+            # ❌ Mostrar SnackBar de error
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("❌ Error al obtener pacientes"),
+                bgcolor=colors.ERROR
+            )
+            page.snack_bar.open = True
+
+        page.update()
+
+    # Entrada de búsqueda + botón de recarga
     busqueda_input = ft.TextField(
         label="Buscar por nombre o correo",
-        width=400,
+        width=300,
         on_change=lambda e: filtrar_pacientes(e.control.value)
     )
 
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(API_URL)
-            response.raise_for_status()
-            pacientes_completos = response.json()
-            actualizar_tabla(pacientes_completos)
-    except Exception as e:
-        print("❌ Error cargando pacientes:", e)
-        import traceback
-        traceback.print_exc()
-        tabla.rows = [ft.DataRow(cells=[ft.DataCell(ft.Text("Error al obtener datos"))])]
+    recargar_btn = ft.ElevatedButton(
+        "🔁 Recargar lista",
+        on_click=cargar_y_actualizar,
+        bgcolor=colors.PRIMARY,
+        color=colors.TEXT_PRIMARY
+    )
+
+    # Primera carga
+    await cargar_y_actualizar()
 
     controles_vista = [
         ft.Container(
             content=ft.Column(
                 controls=[
                     ft.Text("👥 Lista de Pacientes", size=24, weight=ft.FontWeight.BOLD, color=colors.PRIMARY_DARK),
-                    busqueda_input,
+                    ft.Row([busqueda_input, recargar_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     tabla
                 ],
                 spacing=20
@@ -132,7 +163,7 @@ async def PacienteDentistaView(page: ft.Page):
         )
     ]
 
-    navbar = NavbarDentista(page, ruta_actual=page.route)
+    navbar = NavbarDentista(page=page, ruta_actual=page.route)
     if navbar:
         controles_vista.append(navbar)
 

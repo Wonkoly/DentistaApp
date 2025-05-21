@@ -28,7 +28,7 @@ from apps.dentista.views.configuracion_dentista import ConfiguracionDentistaView
 from apps.dentista.views.confirmar_codigo import ConfirmarCodigoView
 from apps.dentista.views.paciente_dentista import PacienteDentistaView
 from apps.dentista.views.ver_citas import VerCitasView
-
+from apps.dentista.views.historial_citas import HistorialCitasView  # ✅ NUEVA IMPORTACIÓN
 
 def main(page: ft.Page):
     page.title = "Clinica Choyo - Dentista"
@@ -64,6 +64,9 @@ def main(page: ft.Page):
             case "/ver_citas":
                 view = VerCitasView(page)
                 print("✅ VerCitasView cargado:", type(view))
+                page.views.append(view)
+            case "/historial_citas":  # ✅ NUEVA RUTA
+                view = await HistorialCitasView(page)
                 page.views.append(view)
 
         page.update()
