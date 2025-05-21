@@ -9,6 +9,7 @@ from datetime import datetime
 router = APIRouter()
 
 class CitaInput(BaseModel):
+    usuario_id: int 
     nombre: str
     apellido: str
     correo: str
@@ -18,7 +19,7 @@ class CitaInput(BaseModel):
     fecha: str  # "YYYY-MM-DD"
     hora: str   # "HH:MM"
     sucursal: str = ""
-    usuario_id: int  # ✅ ¡Aquí se incluye correctamente!
+    
 
 @router.get("/api/citas/")
 def listar_citas(db: Session = Depends(get_db)):

@@ -13,7 +13,7 @@ dnspython==2.7.0
 email_validator==2.2.0
 fastapi==0.115.12
 fastapi-cli==0.0.7
-flet==0.28.2
+flet==0.28.3
 flet-desktop==0.28.2
 flet-web==0.28.2
 greenlet==3.2.2

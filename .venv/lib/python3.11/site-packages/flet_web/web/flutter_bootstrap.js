@@ -15,7 +15,7 @@ _flutter.loader.load({
         renderer: webRenderer
     },
     serviceWorkerSettings: {
-        serviceWorkerVersion: "1374645190",
+        serviceWorkerVersion: "2601907023",
     },
     onEntrypointLoaded: async function (engineInitializer) {
         loading.classList.add('main_done');

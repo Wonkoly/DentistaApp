@@ -45,13 +45,15 @@ def main(page: ft.Page):
             case "/confirmar_codigo":
                 page.views.append(ConfirmarCodigoView(page))
             case "/home_dentista":
-                page.views.append(HomeDentistaView(page))
+                view = await HomeDentistaView(page)  # ✅ SE USA AWAIT
+                page.views.append(view)
             case "/servicios_dentista":
                 page.views.append(ServiciosDentistaView(page))
             case "/configuracion_dentista":
                 page.views.append(ConfiguracionDentistaView(page))
             case "/pacientes_dentista":  # 👈 NUEVA RUTA
-                await PacienteDentistaView(page)  # 👈 AWAIT
+                view = await PacienteDentistaView(page)
+                page.views.append(view)
 
         page.update()
 

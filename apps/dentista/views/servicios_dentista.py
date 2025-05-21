@@ -81,8 +81,12 @@ def ServiciosDentistaView(page: ft.Page):
         servicio_id = servicio_map[servicio_dropdown.value]
 
         try:
+            usuario_id = page.session.get("usuario_id")
+ 
+                                 
             async with httpx.AsyncClient() as client:
                 response = await client.post("http://localhost:8000/api/citas/", json={
+                    "usuario_id": usuario_id,
                     "nombre": nombre_input.value,
                     "apellido": "",
                     "correo": correo_input.value,
@@ -92,7 +96,7 @@ def ServiciosDentistaView(page: ft.Page):
                     "fecha": datetime.strptime(fecha_input.value, "%d/%m/%Y").strftime("%Y-%m-%d"),
                     "hora": hora_input.value,
                     "sucursal": ""
-                })
+            })
 
             if response.status_code == 200:
                 mensaje.value = "✅ Cita registrada correctamente"
