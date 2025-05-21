@@ -3,6 +3,8 @@ import httpx
 from common import colors
 from components.navbar import NavbarDentista
 
+
+
 async def obtener_citas():
     async with httpx.AsyncClient() as client:
         response = await client.get("http://localhost:8000/api/citas_completas")

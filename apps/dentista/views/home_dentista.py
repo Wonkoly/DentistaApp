@@ -1,9 +1,10 @@
 import flet as ft
+import httpx
 from common import colors
 from components.navbar import NavbarDentista
 
 class HomeDentista(ft.View):
-    def __init__(self, page: ft.Page):
+    def __init__(self, page: ft.Page, citas: list):
         self.page = page
         usuario_nombre = page.session.get("usuario_nombre") or "Dentista"
 
@@ -14,20 +15,33 @@ class HomeDentista(ft.View):
             color=colors.PRIMARY_DARK
         )
 
-        calendario_placeholder = ft.Container(
-            content=ft.Text(
-                "Aquí se mostrará el calendario con las citas del día.",
-                size=18,
-                text_align=ft.TextAlign.CENTER,
-                color=colors.TEXT_DARK
-            ),
-            alignment=ft.alignment.center,
-            padding=20,
-            bgcolor=colors.PRIMARY_LIGHT,
-            border_radius=10,
-            width=360,
-            height=300
-        )
+        if citas:
+            calendario_real = ft.Column(
+                controls=[
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text(f"🕒 {cita['fecha']} {cita['hora']}", weight=ft.FontWeight.BOLD),
+                            ft.Text(f"👤 {cita['nombre']}"),
+                            ft.Text(f"🦷 {cita['servicio']}"),
+                            ft.Text(f"📝 {cita['notas']}"),
+                            ft.Text(f"💳 Pagado: {cita['pago_en_linea']}")
+                        ],
+                        spacing=4),
+                        padding=10,
+                        bgcolor=colors.PRIMARY_LIGHT,
+                        border_radius=10,
+                        width=360
+                    ) for cita in citas
+                ],
+                spacing=10,
+                scroll=ft.ScrollMode.AUTO
+            )
+        else:
+            calendario_real = ft.Text(
+                "No hay citas registradas aún.",
+                size=16,
+                color=colors.SECONDARY
+            )
 
         info_consulta = ft.Text(
             "Selecciona una cita para ver detalles como nombre del paciente, correo, horario y motivo.",
@@ -42,7 +56,7 @@ class HomeDentista(ft.View):
                     content=ft.Column([
                         saludo,
                         ft.Text("Calendario de Citas", size=24, weight=ft.FontWeight.BOLD, color=colors.SECONDARY),
-                        calendario_placeholder,
+                        calendario_real,
                         info_consulta
                     ],
                     spacing=20,
@@ -56,4 +70,15 @@ class HomeDentista(ft.View):
         )
 
 async def HomeDentistaView(page: ft.Page):
-    return HomeDentista(page)
+    usuario_id = page.session.get("usuario_id")
+    citas = []
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"http://localhost:8000/api/citas_completas?usuario_id={usuario_id}")
+            if response.status_code == 200:
+                citas = response.json()
+    except Exception as e:
+        print("❌ Error al obtener citas:", e)
+
+    return HomeDentista(page, citas)

@@ -27,15 +27,17 @@ async def PacienteDentistaView(page: ft.Page):
     def ver_citas_paciente(e):
         paciente = e.control.data
         page.dialog = ft.AlertDialog(
-            title=ft.Text(f"Citas de {p['nombre']}"),
+            title=ft.Text(f"Citas de {paciente['nombre']}"),
             content=ft.Column(
                 controls=[
                     ft.Text(f"Correo: {paciente['correo']}"),
                     ft.Text(f"Teléfono: {paciente['telefono']}"),
                     ft.Text("Citas:"),
-                    ft.Column(controls=[
-                        ft.Text(f"• {cita}") for cita in paciente.get("citas", [])
-                    ])
+                    ft.Column(
+                        controls=[
+                            ft.Text(f"• {cita}") for cita in paciente.get("citas", ["Sin citas registradas"])
+                        ]
+                    )
                 ],
                 tight=True
             ),

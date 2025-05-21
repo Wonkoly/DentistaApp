@@ -17,7 +17,7 @@ servicio_map = {
 def ServiciosDentistaView(page: ft.Page):
     servicio_dropdown = ft.Dropdown(
         label="Selecciona un servicio",
-        options=[ft.dropdown.Option(k) for k in servicio_map],
+        options=[ft.dropdown.Option(text=nombre, key=nombre) for nombre in servicio_map.keys()],
         width=300,
         border_color=colors.PRIMARY,
         focused_border_color=colors.PRIMARY_DARK
@@ -82,8 +82,7 @@ def ServiciosDentistaView(page: ft.Page):
 
         try:
             usuario_id = page.session.get("usuario_id")
- 
-                                 
+
             async with httpx.AsyncClient() as client:
                 response = await client.post("http://localhost:8000/api/citas/", json={
                     "usuario_id": usuario_id,
@@ -96,7 +95,7 @@ def ServiciosDentistaView(page: ft.Page):
                     "fecha": datetime.strptime(fecha_input.value, "%d/%m/%Y").strftime("%Y-%m-%d"),
                     "hora": hora_input.value,
                     "sucursal": ""
-            })
+                })
 
             if response.status_code == 200:
                 mensaje.value = "✅ Cita registrada correctamente"
@@ -110,6 +109,11 @@ def ServiciosDentistaView(page: ft.Page):
             mensaje.color = colors.ERROR
 
         page.update()
+
+    # Depuración en consola
+    print("✔ Servicios cargados en el dropdown:")
+    for opt in servicio_dropdown.options:
+        print(" -", opt.text)
 
     return ft.View(
         "/servicios_dentista",
