@@ -1,8 +1,5 @@
 from fastapi import FastAPI
 from backend.routes import auth, citas
-from backend.routes import citas
-
-
 
 app = FastAPI()
 
