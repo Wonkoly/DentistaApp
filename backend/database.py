@@ -6,11 +6,31 @@ from dotenv import load_dotenv
 # Carga variables desde .env
 load_dotenv()
 
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+
+def get_env_var(name: str) -> str:
+    """Obtiene y valida una variable de entorno.
+
+    Args:
+        name: Nombre de la variable de entorno.
+
+    Returns:
+        str: Valor de la variable de entorno.
+
+    Raises:
+        RuntimeError: Si la variable no está definida.
+    """
+
+    value = os.getenv(name)
+    if value is None:
+        raise RuntimeError(f"La variable de entorno '{name}' no está definida")
+    return value
+
+
+DB_USER = get_env_var("DB_USER")
+DB_PASSWORD = get_env_var("DB_PASSWORD")
+DB_HOST = get_env_var("DB_HOST")
+DB_PORT = get_env_var("DB_PORT")
+DB_NAME = get_env_var("DB_NAME")
 
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
