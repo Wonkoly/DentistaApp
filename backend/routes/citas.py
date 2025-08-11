@@ -6,7 +6,7 @@ from backend.models.paciente import Paciente
 from backend.models.cita import Cita
 from datetime import datetime, time
 
-router = APIRouter()
+router = APIRouter(prefix="/api/citas")
 
 class CitaInput(BaseModel):
     usuario_id: int
@@ -21,12 +21,12 @@ class CitaInput(BaseModel):
     sucursal: str = ""
 
 
-@router.get("/api/citas/")
+@router.get("/")
 def listar_citas(db: Session = Depends(get_db)):
     return db.query(Cita).all()
 
 
-@router.post("/api/citas/")
+@router.post("/")
 def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
     formatos = ["%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M"]
     fecha_hora = None
@@ -81,7 +81,7 @@ def registrar_cita(data: CitaInput, db: Session = Depends(get_db)):
     return {"mensaje": "Cita registrada correctamente", "id": cita.id}
 
 
-@router.get("/api/pacientes")
+@router.get("/pacientes")
 def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     pacientes_db = db.query(Paciente).all()
     resultado = []
@@ -104,7 +104,7 @@ def obtener_pacientes_con_citas(db: Session = Depends(get_db)):
     return resultado
 
 
-@router.get("/api/citas_completas")
+@router.get("/citas_completas")
 def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(get_db)):
     citas = db.query(Cita).filter(Cita.usuario_id == usuario_id, Cita.estado != "finalizada").all()
     resultado = []
@@ -124,7 +124,7 @@ def obtener_citas_completas(usuario_id: int = Query(...), db: Session = Depends(
     return resultado
 
 
-@router.put("/api/citas/{cita_id}/finalizar")
+@router.put("/{cita_id}/finalizar")
 def finalizar_cita(cita_id: int, db: Session = Depends(get_db)):
     cita = db.query(Cita).filter(Cita.id == cita_id).first()
     if not cita:
@@ -136,7 +136,7 @@ def finalizar_cita(cita_id: int, db: Session = Depends(get_db)):
     return {"mensaje": "Cita finalizada correctamente"}
 
 
-@router.get("/api/citas/finalizadas")
+@router.get("/finalizadas")
 def obtener_citas_finalizadas(usuario_id: int = Query(...), db: Session = Depends(get_db)):
     citas = db.query(Cita).filter(Cita.usuario_id == usuario_id, Cita.estado == "finalizada").all()
     resultado = []
