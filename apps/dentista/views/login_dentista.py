@@ -1,27 +1,9 @@
 import flet as ft
-import re
 import httpx
 from common import colors
-from typing import Tuple
+from common.validators import validar_email
 
 API_LOGIN_URL = "http://localhost:8000/api/usuarios/login"
-
-def validar_email(email: str) -> Tuple[bool, str]:
-    pattern = r'^[\w\.-]+@([\w\.-]+\.\w+)$'
-    match = re.match(pattern, email)
-    if not match:
-        return False, "Correo electrónico no válido"
-    dominio = email.split('@')[1].lower()
-    dominios_prohibidos = {
-        "gmai.com": "¿Quisiste decir gmail.com?",
-        "hotmial.com": "¿Quisiste decir hotmail.com?",
-        "yaho.com": "¿Quisiste decir yahoo.com?",
-        "outlok.com": "¿Quisiste decir outlook.com?",
-        "gmal.com": "¿Quisiste decir gmail.com?"
-    }
-    if dominio in dominios_prohibidos:
-        return False, dominios_prohibidos[dominio]
-    return True, ""
 
 def LoginDentistaView(page: ft.Page):
     email_input = ft.TextField(
